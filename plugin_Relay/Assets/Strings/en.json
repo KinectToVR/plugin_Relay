@@ -1,0 +1,21 @@
+{
+		"language": "en",
+		"messages": [
+				{
+						"id": "/Statuses/Success",
+						"translation": "Success!\nS_OK\nEverything's good!"
+				},
+				{
+						"id": "/Statuses/Failure",
+						"translation": "Failure!\nS_SHUT\nThe device is offline!"
+				},
+				{
+						"id": "/Settings/Labels/LocalIP/One",
+						"translation": "Your Local IP:"
+				},
+				{
+						"id": "/Settings/Labels/LocalIP/Multiple",
+						"translation": "Your Local IP: (One of)"
+				}
+		]
+}
