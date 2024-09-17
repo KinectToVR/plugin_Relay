@@ -19,6 +19,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="Pages\DeviceSettings.xaml" />
+		<None Remove="SettingsControl.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Amethyst.Plugins.Contract" Version="0.2.25" />
 		<PackageReference Include="MagicOnion" Version="3.0.13" />
 		<PackageReference Include="MagicOnion.Hosting" Version="3.0.13" />
@@ -28,4 +33,25 @@
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<Page Update="SettingsControl.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</Page>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Page Update="Pages\DeviceSettings.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</Page>
+	</ItemGroup>
+
+	<Target Name="Test" AfterTargets="Publish">
+		<ItemGroup>
+			<_CustomFiles1 Include="$(ProjectDir)$(OutDir)plugin_Relay\Pages\*.*" />
+			<_CustomFiles2 Include="$(ProjectDir)$(OutDir)plugin_Relay.pri" />
+		</ItemGroup>
+		<Copy SourceFiles="@(_CustomFiles1)" DestinationFolder="$(PublishDir)\Pages" />
+		<Copy SourceFiles="@(_CustomFiles2)" DestinationFiles="$(PublishDir)\resources.pri" />
+	</Target>
 </Project>

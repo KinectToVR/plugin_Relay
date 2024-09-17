@@ -1,7 +1,7 @@
 <h1 dir=auto>
-<b>Kinect One (Fake)</b>
+<b>Amethyst Tracking Relay</b>
 <a style="color:#9966cc;" href="https://github.com/KinectToVR/Amethyst">Amethyst</a>
-<text>device plugin</text>
+<text>plugin</text>
 </h1>
 
 ## **License**
@@ -9,14 +9,14 @@ This project is licensed under the GNU GPL v3 License
 
 ## **Overview**
 This repo is a pure implementation of the `ITrackingDevice` interface,  
-providing Amethyst support for the Xbox One Kinect, as a fake device.  
-Both the handler and the plugin itself ([available here](https://github.com/KimihikoAkayasaki/plugin_Relay/tree/main/plugin_Relay)) are written in C#
+providing Amethyst support for the Tracking Relay to forward tracking data.
+Both the handler and the plugin itself ([available here](https://github.com/KinectToVR/plugin_Relay/tree/main/plugin_Relay)) are written in C#
 
 ## **Downloads**
-You're going to find built plugins in [repo Releases](https://github.com/KimihikoAkayasaki/plugin_Relay/releases/latest).
+You're going to find built plugins in [repo Releases](https://github.com/KinectToVR/plugin_Relay/releases/latest).
 
 ## **Build & Deploy**
-Both build and deployment instructions [are available here](https://github.com/KimihikoAkayasaki/plugin_Relay/blob/main/.github/workflows/build.yml).
+Both build and deployment instructions [are available here](https://github.com/KinectToVR/plugin_Relay/blob/main/.github/workflows/build.yml).
  - Open in Visual Studio and publish using the prepared publish profile  
    (`plugin_Relay` → `Publish` → `Publish` → `Open folder`)
  - Copy the published plugin to the `plugins` folder of your local Amethyst installation  

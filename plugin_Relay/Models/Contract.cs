@@ -10,7 +10,7 @@ using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
 
-namespace plugin_Relay;
+namespace plugin_Relay.Models;
 
 #nullable enable
 

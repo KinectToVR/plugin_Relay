@@ -10,12 +10,124 @@
 						"translation": "Failure!\nS_SHUT\nThe device is offline!"
 				},
 				{
+						"id": "/Statuses/Exception",
+						"translation": "Server exception!\nE_EXCEPTION\nThe server couldn't be set up properly because a fatal exception occurred: {}"
+				},
+				{
+						"id": "/Statuses/WasShutDown",
+						"translation": "Server was shut down!\nS_SHUTBYUSER\nThe server was manually shut down, click 'Refresh' to restart it."
+				},
+				{
 						"id": "/Settings/Labels/LocalIP/One",
 						"translation": "Your Local IP:"
 				},
 				{
 						"id": "/Settings/Labels/LocalIP/Multiple",
 						"translation": "Your Local IP: (One of)"
+				},
+				{
+						"id": "/Settings/Labels/Port",
+						"translation": "Web server port:"
+				},
+				{
+						"id": "/Buttons/Reconnect",
+						"translation": "Reconnect"
+				},
+				{
+						"id": "/Buttons/Disconnect",
+						"translation": "Disconnect"
+				},
+				{
+						"id": "/Titles/RelayStatus",
+						"translation": "Status:"
+				},
+				{
+						"id": "/Buttons/Copy",
+						"translation": "Copy Error"
+				},
+				{
+						"id": "/Buttons/JoinDiscord",
+						"translation": "Join Discord"
+				},
+				{
+						"id": "/Cached",
+						"translation": "(Cached)"
+				},
+				{
+						"id": "/Refresh/Test",
+						"translation": "Testing service connection..."
+				},
+				{
+						"id": "/Refresh/Ping",
+						"translation": "Tested ping time:"
+				},
+				{
+						"id": "/Refresh/Error",
+						"translation": "Connection error:"
+				},
+				{
+						"id": "/Refresh/Apply",
+						"translation": " (Reconnect to apply updated settings)"
+				},
+				{
+						"id": "/Refresh/ApplyServer",
+						"translation": "Click 'Refresh' to apply"
+				},
+				{
+						"id": "/Statuses/Failure/Version",
+						"translation": "Cannot read tracking data!\nE_UNAVAILABLE\nYou're using an unsupported version on Amethyst."
+				},
+				{
+						"id": "/Settings/Discovery/Header",
+						"translation": "Amethyst Tracking Relay server discovered on {}!"
+				},
+				{
+						"id": "/Settings/Discovery/Subtitle",
+						"translation": "Would you like to connect to it?"
+				},
+				{
+						"id": "/Statuses/Discovery/Connect",
+						"translation": "Connect"
+				},
+				{
+						"id": "/RelayStatuses/Success",
+						"translation": "Success!\nS_OK\nEverything's good!"
+				},
+				{
+						"id": "/RelayStatuses/ServiceError",
+						"translation": "Service error!\nE_SERVICE_ERRROR\nThe data receiver service couldn't be instantiated due to an error. {}"
+				},
+				{
+						"id": "/RelayStatuses/ConnectionError",
+						"translation": "Connection error!\nE_CONNECTION_ERRROR\nCouldn't connect to the data service server due to an error. {}"
+				},
+				{
+						"id": "/RelayStatuses/ConnectionLost",
+						"translation": "Connection lost!\nE_CONNECTION_LOST\nConnection to the data service server was lost due to an error. {}"
+				},
+				{
+						"id": "/RelayStatuses/DevicesListEmpty",
+						"translation": "No remote devices!\nE_NO_DEVICES\nThe remote device list received from the server was empty."
+				},
+				{
+						"id": "/RelayStatuses/BackFeedDetected",
+						"translation": "Backfeed detected!\nE_BACKFEED_CONF\nAmethyst was not supposed to create device loopholes. Your configuration is not supported. Think about what you have done while doing something productive instead."
+				},
+				{
+						"id": "/RelayStatuses/NotInitialized",
+						"translation": "Not initialized!\nE_NOTINITIALIZED\nThe relay service client is not initialized. click 'Refresh' to restart it."
+				},
+				{
+						"id": "/RelayStatuses/Disconnected",
+						"translation": "Client disconnected!\nE_DISCONNECTED\nThe relay service client was disconnected. click 'Refresh' to restart it."
+				},
+				{
+						"id": "/RelayStatuses/Other",
+						"translation": "Service exception!\nE_OTHER\nAn unexpected exception has occurred. {}"
+				},
+				{
+						"id": "/DeviceStatuses/Placeholder",
+						"translation": "Remote device unavailable!\nE_NOT_INITIALIZED\nAmethyst Tracking Relay is not available, this remote device is not going to work right now. To fix this, try refreshing the Tracking Relay and checking its status."
 				}
 		]
 }

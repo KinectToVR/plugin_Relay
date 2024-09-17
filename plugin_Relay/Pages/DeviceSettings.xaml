@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<UserControl x:Class="plugin_Relay.Pages.DeviceSettings"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="using:plugin_Relay.Pages" Loaded="DeviceSettings_OnLoaded"
+             VerticalContentAlignment="Stretch" VerticalAlignment="Stretch" Unloaded="DeviceSettings_OnUnloaded">
+
+	<Grid Padding="8,0" VerticalAlignment="Stretch"
+	      RowDefinitions="Auto,Auto,Auto,*" RowSpacing="20">
+
+		<!--The panel title header-->
+		<TextBlock Text="Tracking Relay Settings" FontSize="32" Grid.Row="0"
+		           Margin="0,5,0,0" FontWeight="SemiBold" />
+
+		<!--Server connection controls-->
+		<Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,10,0,0" Grid.Row="1">
+			<TextBox Text="{x:Bind Device.ServerIp, Mode=OneWay}" PlaceholderText="127.0.0.1" Grid.Column="0"
+			         Header="Web server address:" LostFocus="AddressTextBox_OnLostFocus" x:Name="ServerAddressBox" />
+			<NumberBox Value="{x:Bind Device.ServerPort, Mode=OneWay}" Maximum="65535"
+			           SmallChange="1" LargeChange="1" Minimum="0" SpinButtonPlacementMode="Inline" Grid.Column="1"
+			           Header="Web server port:" ValueChanged="PortNumberBox_OnValueChanged" x:Name="ServerPortBox" />
+		</Grid>
+
+		<!--Status control grid with the refresh button-->
+		<StackPanel Style="{ThemeResource CardMiddleStyle}" Grid.Row="2"
+		            CornerRadius="4" Margin="0,0,0,8">
+			<Grid Margin="5,0,0,0" HorizontalAlignment="Stretch">
+				<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,-3,0,0"
+				           Text="{x:Bind Host.RequestLocalizedString('/Titles/RelayStatus'), Mode=OneWay}"
+				           Foreground="{ThemeResource ControlDisplayTextBrush}" FontSize="16" />
+
+				<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center"
+				           FontWeight="SemiBold" Text="{x:Bind DeviceStatusHeader, Mode=OneWay}"
+				           Margin="55,-3,0,0" FontSize="16" />
+
+				<SplitButton VerticalContentAlignment="Center" FontWeight="SemiBold"
+				             CornerRadius="4" Height="35" MinWidth="160"
+				             HorizontalAlignment="Right" VerticalAlignment="Top"
+				             Content="{x:Bind Host.RequestLocalizedString('/Buttons/Reconnect'), Mode=OneWay}"
+				             Click="ReconnectClientButton_OnClick" x:Name="ConnectionsButton">
+
+					<SplitButton.Flyout>
+						<Flyout Placement="Bottom" x:Name="AlternativeConnectionOptionsFlyout"
+						        Opening="AlternativeConnectionOptionsFlyout_OnOpening"
+						        Closing="AlternativeConnectionOptionsFlyout_OnClosing">
+							<Flyout.FlyoutPresenterStyle>
+								<Style TargetType="FlyoutPresenter">
+									<Setter Property="CornerRadius" Value="8" />
+									<Setter Property="Background"
+									        Value="{ThemeResource AcrylicInAppFillColorDefaultBrush}" />
+								</Style>
+							</Flyout.FlyoutPresenterStyle>
+
+							<StackPanel Orientation="Vertical">
+								<Button CornerRadius="4" Height="35" HorizontalAlignment="Stretch"
+								        Content="{x:Bind Host.RequestLocalizedString('/Buttons/Disconnect'), Mode=OneWay}"
+								        IsEnabled="{Binding ElementName=ConnectionsButton, Mode=OneWay, Path=IsEnabled}"
+								        FontWeight="SemiBold" Click="DisconnectClientButton_OnClick" />
+							</StackPanel>
+						</Flyout>
+					</SplitButton.Flyout>
+				</SplitButton>
+			</Grid>
+
+			<InfoBar IsOpen="{x:Bind DiscoveryBarData.IsOpen, Mode=OneWay}"
+			         IsClosable="{x:Bind DiscoveryBarData.Closable, Mode=OneWay}"
+			         Margin="0, 7, 0, 2" Severity="Informational"
+			         Title="{x:Bind DiscoveryBarData.Title, Mode=OneWay}" Message="">
+
+				<InfoBar.ActionButton>
+					<Button HorizontalAlignment="Right" Click="{x:Bind DiscoveryBarData.ClickAction, Mode=OneWay}"
+					        Content="{x:Bind DiscoveryBarData.Button, Mode=OneWay}" />
+				</InfoBar.ActionButton>
+
+				<InfoBar.OpacityTransition>
+					<ScalarTransition />
+				</InfoBar.OpacityTransition>
+			</InfoBar>
+
+			<Grid Margin="0,5,0,0" HorizontalAlignment="Stretch"
+			      Visibility="{x:Bind Device.StatusError, Mode=OneWay}">
+				<Grid.Transitions>
+					<TransitionCollection>
+						<RepositionThemeTransition />
+					</TransitionCollection>
+				</Grid.Transitions>
+
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="38" MinWidth="0" />
+					<ColumnDefinition Width="Auto" />
+				</Grid.ColumnDefinitions>
+
+				<Grid Background="{ThemeResource ControlDisplayBackgroundBrush}"
+				      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+				      BorderThickness="{ThemeResource ControlExampleDisplayBorderThickness}"
+
+				      Padding="0,0,5,10" Width="Auto" Grid.Column="0"
+				      MinHeight="115" Height="Auto" CornerRadius="4">
+
+					<TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
+					           FontWeight="SemiBold" FontFamily="Consolas" FontSize="16"
+					           Text="{x:Bind Device.StatusSplit[1], Mode=OneWay}"
+					           x:Name="TrackingDeviceErrorLabel" Margin="10,7,0,0"
+					           Foreground="{ThemeResource SystemFillColorAttentionBrush}" />
+
+					<TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
+					           FontWeight="SemiBold" Margin="10,30,5,0"
+					           Text="{x:Bind Device.StatusSplit[2], Mode=OneWay}"
+					           Foreground="{ThemeResource ControlDisplayTextBrush}"
+					           TextWrapping="WrapWholeWords" FontSize="16" />
+				</Grid>
+
+				<StackPanel Grid.Column="2" Orientation="Vertical">
+					<Button VerticalContentAlignment="Center" FontWeight="SemiBold"
+					        Margin="0,0,0,5" CornerRadius="4"
+					        Content="{x:Bind Host.RequestLocalizedString('/Buttons/Copy'), Mode=OneWay}"
+					        Click="CopyExceptionButton_OnClick" Height="55" Width="160"
+					        Style="{ThemeResource AccentButtonStyle}"
+					        HorizontalAlignment="Right" VerticalAlignment="Top" />
+
+					<Button VerticalContentAlignment="Center" FontWeight="SemiBold"
+					        Margin="0,0,0,0" CornerRadius="4"
+					        Content="{x:Bind Host.RequestLocalizedString('/Buttons/JoinDiscord'), Mode=OneWay}"
+					        Height="55" Width="160" Click="OpenDiscordButton_OnClick"
+					        HorizontalAlignment="Right" VerticalAlignment="Top" />
+				</StackPanel>
+			</Grid>
+		</StackPanel>
+
+		<!--Devices available via the relay-->
+		<ScrollViewer HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+		              VerticalScrollBarVisibility="Visible" Grid.Row="3"
+		              Margin="-8,0" Padding="8,0">
+			<ScrollViewer.Transitions>
+				<TransitionCollection>
+					<RepositionThemeTransition />
+				</TransitionCollection>
+			</ScrollViewer.Transitions>
+
+			<ItemsRepeater ItemsSource="{x:Bind DevicesList}">
+				<ItemsRepeater.ItemTemplate>
+					<DataTemplate x:DataType="pages:DeviceDataTuple">
+						<StackPanel Style="{ThemeResource CardMiddleStyle}"
+						            CornerRadius="4" Margin="0,0,0,8">
+							<Grid Margin="10,0,0,0" HorizontalAlignment="Stretch">
+								<Grid ColumnDefinitions="Auto, *">
+									<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="SemiBold"
+									           Text="{x:Bind Name, Mode=OneWay}" FontSize="16" />
+									<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1"
+									           Text="{x:Bind Host.Device.RelayHostname, Mode=OneWay}"
+									           Margin="6,0,0,0" FontSize="15" TextTrimming="CharacterEllipsis"
+									           Foreground="{ThemeResource ControlDisplayTextBrush}" />
+								</Grid>
+
+								<ToggleSwitch OnContent="" OffContent="" IsOn="{x:Bind IsEnabled, Mode=TwoWay}"
+								              HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-105,0" />
+							</Grid>
+						</StackPanel>
+
+
+					</DataTemplate>
+				</ItemsRepeater.ItemTemplate>
+			</ItemsRepeater>
+		</ScrollViewer>
+
+	</Grid>
+</UserControl>

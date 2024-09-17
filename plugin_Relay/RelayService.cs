@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Numerics;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Networking;
+using Windows.Networking.Connectivity;
 using Amethyst.Plugins.Contract;
 using Grpc.Core;
-using MagicOnion;
 using MagicOnion.Hosting;
 using MagicOnion.Server;
 using MagicOnion.Server.Hubs;
 using MessagePack;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using plugin_Relay.Models;
 using IServiceEndpoint = Amethyst.Plugins.Contract.IServiceEndpoint;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -32,6 +33,8 @@ namespace plugin_Relay;
 [ExportMetadata("Website", "https://github.com/KimihikoAkayasaki/plugin_Relay")]
 public class RelayService : IServiceEndpoint
 {
+    private Dictionary<string, ITrackingDevice> _trackingDevices = [];
+
     public RelayService()
     {
         Instance = this;
@@ -48,6 +51,51 @@ public class RelayService : IServiceEndpoint
     private IHost ServerHost { get; set; }
     private CancellationTokenSource ServerToken { get; set; }
     private bool IsShuttingDown { get; set; }
+    private TextBlock RefreshTextBlock { get; set; }
+    private Beacon.Beacon ServerBeacon { get; set; }
+
+    private int ServerPort
+    {
+        get => PluginLoaded ? Host?.PluginSettings.GetSetting("ServerPort", 10042) ?? 10042 : 10042;
+        set
+        {
+            if (PluginLoaded) Host?.PluginSettings.SetSetting("ServerPort", value);
+        }
+    }
+
+    private List<string> IpList
+    {
+        get
+        {
+            try
+            {
+                var profile = NetworkInformation.GetInternetConnectionProfile();
+                return NetworkInformation.GetHostNames()
+                    .Where(x => x.Type is HostNameType.Ipv4)
+                    .Where(x => x.IPInformation?.NetworkAdapter?.NetworkAdapterId == profile?.NetworkAdapter?.NetworkAdapterId)
+                    .Select(x => x.CanonicalName).ToList();
+            }
+            catch
+            {
+                return ["127.0.0.1"];
+            }
+        }
+    }
+
+    public Action<string, bool> RequestShutdown { get; set; }
+    public Action RequestReload { get; set; }
+
+    public bool IsBackfeed
+    {
+        get
+        {
+            if (ServiceStatus != 0 || Host is null) return false; // Not working
+            if (RelayDevice.Instance is null) return false; // No receiver active
+            return RelayDevice.Instance.ServerIp is "127.0.0.1" or "localhost" &&
+                   RelayDevice.Instance.ServerPort == ServerPort; // Backfeed O.O
+        }
+    }
+
     public object SettingsInterfaceRoot => InterfaceRoot;
     public bool IsSettingsDaemonSupported => true;
     public int ServiceStatus { get; set; } = -1;
@@ -56,18 +104,19 @@ public class RelayService : IServiceEndpoint
     public bool IsRestartOnChangesNeeded => false;
     public bool CanAutoStartAmethyst => false;
     public string TrackingSystemName => "Relay";
-    private TextBlock RefreshTextBlock { get; set; }
 
-    public string ServiceStatusString => InitException is not null
-        ? $"ERROR\n{InitException.GetType().Name}\n{InitException.Message}"
-        : PluginLoaded
-            ? ServiceStatus switch
-            {
-                0 => Host.RequestLocalizedString("/Statuses/Success"),
-                1 => Host.RequestLocalizedString("/Statuses/Failure"),
-                _ => $"Undefined: {ServiceStatus}\nE_UNDEFINED\nSomething weird has happened, though we can't tell what."
-            }
-            : $"Undefined: {ServiceStatus}\nE_UNDEFINED\nSomething weird has happened, though we can't tell what.";
+    public string ServiceStatusString => PluginLoaded
+        ? ServiceStatus switch
+        {
+            _ when InitException is not null => Host.RequestLocalizedString("/Statuses/Exception")
+                .Replace("{}", $"{InitException.GetType().Name} - {InitException.Message}"),
+            0 => Host.RequestLocalizedString("/Statuses/Success"),
+            1 => Host.RequestLocalizedString("/Statuses/Failure"),
+            2 => Host.RequestLocalizedString("/Statuses/Failure/Version"),
+            -1 => Host.RequestLocalizedString("/Statuses/WasShutDown"),
+            _ => $"Undefined: {ServiceStatus}\nE_UNDEFINED\nSomething weird has happened, though we can't tell what."
+        }
+        : $"Undefined: {ServiceStatus}\nE_UNDEFINED\nSomething weird has happened, though we can't tell what.";
 
     public SortedSet<TrackerType> AdditionalSupportedTrackerTypes =>
     [
@@ -101,15 +150,6 @@ public class RelayService : IServiceEndpoint
         set { }
     }
 
-    private int ServerPort
-    {
-        get => PluginLoaded ? Host?.PluginSettings.GetSetting("ServerPort", 10042) ?? 10042 : 10042;
-        set
-        {
-            if (PluginLoaded) Host?.PluginSettings.SetSetting("ServerPort", value);
-        }
-    }
-
     public (Vector3 Position, Quaternion Orientation)? HeadsetPose => null;
 
     public void DisplayToast((string Title, string Text) message)
@@ -130,25 +170,6 @@ public class RelayService : IServiceEndpoint
         {
             DevicesToUpdate.Select(guid => _trackingDevices.GetValueOrDefault(guid, null))
                 .Where(x => x is not null).Where(x => !x.IsSelfUpdateEnabled).ToList().ForEach(x => x.Update());
-        }
-    }
-
-    private List<string> IpList
-    {
-        get
-        {
-            try
-            {
-                var profile = Windows.Networking.Connectivity.NetworkInformation.GetInternetConnectionProfile();
-                return Windows.Networking.Connectivity.NetworkInformation.GetHostNames()
-                    .Where(x => x.Type is HostNameType.Ipv4)
-                    .Where(x => x.IPInformation?.NetworkAdapter?.NetworkAdapterId == profile?.NetworkAdapter?.NetworkAdapterId)
-                    .Select(x => x.CanonicalName).ToList();
-            }
-            catch
-            {
-                return ["127.0.0.1"];
-            }
         }
     }
 
@@ -186,6 +207,13 @@ public class RelayService : IServiceEndpoint
             ServerTask = ServerHost.StartAsync(ServerToken.Token);
             RefreshTextBlock.Visibility = Visibility.Collapsed;
             Host?.RefreshStatusInterface();
+
+            ServerBeacon = new Beacon.Beacon("AmethystRelay", (ushort)ServerPort)
+            {
+                BeaconData = ServerPort.ToString()
+            };
+
+            ServerBeacon.Start();
         }
         catch (Exception ex)
         {
@@ -202,7 +230,7 @@ public class RelayService : IServiceEndpoint
     // This is called after the app loads the plugin
     public void OnLoad()
     {
-        Host?.Log("Loading Amethyst Tracking Relay now!");
+        Host.Log("Loading Amethyst Tracking Relay now!");
         PluginLoaded = true;
 
         var ipTextBlock = new TextBlock
@@ -210,15 +238,17 @@ public class RelayService : IServiceEndpoint
             Text = IpList.Count > 1 // Format as list if found multiple IPs!
                 ? $"[ {string.Join(", ", IpList)} ]" // Or show a placeholder
                 : IpList.ElementAtOrDefault(0) ?? "127.0.0.1",
-            Margin = new Thickness(3), Opacity = 0.6
+            Margin = new Thickness(3), Opacity = 0.6,
+            FontWeight = FontWeights.SemiBold
         };
 
         var ipLabelTextBlock = new TextBlock
         {
-            Text = Host?.RequestLocalizedString(IpList.Count > 1
+            Text = Host.RequestLocalizedString(IpList.Count > 1
                 ? "/Settings/Labels/LocalIP/Multiple"
                 : "/Settings/Labels/LocalIP/One"),
-            Margin = new Thickness { Left = 5, Top = 3, Right = 3, Bottom = 3 }
+            Margin = new Thickness { Left = 5, Top = 3, Right = 3, Bottom = 3 },
+            FontWeight = FontWeights.SemiBold
         };
 
         var portNumberBox = new NumberBox
@@ -229,14 +259,15 @@ public class RelayService : IServiceEndpoint
             Minimum = 0, Maximum = 65535,
             Header = new TextBlock
             {
-                Text = "Web server port:"
+                Text = Host.RequestLocalizedString("/Settings/Labels/Port"),
+                FontWeight = FontWeights.SemiBold
             },
             Margin = new Thickness { Left = 5, Top = 3, Right = 3, Bottom = 3 }
         };
 
         RefreshTextBlock = new TextBlock
         {
-            Text = "Click 'Refresh' to apply",
+            Text = Host.RequestLocalizedString("/Refresh/ApplyServer"),
             Visibility = Visibility.Collapsed,
             FontSize = 12.0, Opacity = 0.5,
             Margin = new Thickness { Left = 5, Top = 3, Right = 3, Bottom = 3 }
@@ -335,21 +366,19 @@ public class RelayService : IServiceEndpoint
         IsShuttingDown = true;
     }
 
-    private Dictionary<string, ITrackingDevice> _trackingDevices = [];
-
     public Dictionary<string, ITrackingDevice> GetTrackingDevices()
     {
         if (ServiceStatus != 0 || Host is null) return [];
 
         var trackingDevicesProperty = Host!.GetType().GetProperty("TrackingDevices");
-        if (trackingDevicesProperty is null || !trackingDevicesProperty.CanRead)
-            // ServiceStatusString = "Cannot read tracking data!\nE_UNAVAILABLE\nYou're using an unsupported version on Amethyst." // TODO
-            return [];
+        if (trackingDevicesProperty is not null && trackingDevicesProperty.CanRead)
+            // Return all tracking devices from the host, try not to create any inbred ones...
+            return _trackingDevices = ((Dictionary<string, ITrackingDevice>)trackingDevicesProperty.GetValue(Host) ?? [])
+                .Where(x => x.Value is not TrackingDevice && x.Key is not "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")
+                .ToDictionary(x => x.Key, x => x.Value); // Re-compose the dictionary prior to return
 
-        // Return all tracking devices from the host, try not to create any inbred ones...
-        return _trackingDevices = ((Dictionary<string, ITrackingDevice>)trackingDevicesProperty.GetValue(Host) ?? [])
-            .Where(x => x.Value is not TrackingDevice && x.Key is not "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")
-            .ToDictionary(x => x.Key, x => x.Value); // Re-compose the dictionary prior to return
+        ServiceStatus = 2;
+        return []; // Otherwise kill ourselves
     }
 
     public ITrackingDevice GetTrackingDevice(string guid)
@@ -358,38 +387,12 @@ public class RelayService : IServiceEndpoint
         if (!_trackingDevices.ContainsKey(guid)) GetTrackingDevices();
         return _trackingDevices.GetValueOrDefault(guid, null);
     }
-
-    public Action<string, bool> RequestShutdown { get; set; }
-    public Action RequestReload { get; set; }
-
-    public bool IsBackfeed
-    {
-        get
-        {
-            if (ServiceStatus != 0 || Host is null) return false; // Not working
-            if (RelayDevice.Instance is null) return false; // No receiver active
-            return RelayDevice.Instance.ServerIp is "127.0.0.1" or "localhost" && 
-                   RelayDevice.Instance.ServerPort == ServerPort; // Backfeed O.O
-        }
-    }
 }
 
 // ReSharper disable once UnusedMember.Global
 public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelayService
 {
     private IGroup _group;
-
-    protected override async ValueTask OnConnecting()
-    {
-        _group = await Group.AddAsync(Guid.NewGuid().ToString());
-        if (RelayService.Instance is not null)
-        {
-            RelayService.Instance.RequestShutdown = (reason, fatal) => Broadcast(_group).OnRequestShutdown(reason, fatal);
-            RelayService.Instance.RequestReload = () => Broadcast(_group).OnRefreshInterface();
-        }
-
-        await base.OnConnecting();
-    }
 
     public async Task<long> PingService()
     {
@@ -421,7 +424,8 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
     {
         if (RelayService.Instance is null) return null;
         RelayService.Instance.DevicesToUpdate.Add(guid); // Mark the device as used
-        return RelayService.Instance.GetTrackingDevice(guid)?.TrackedJoints.ToList() ?? [];
+        var device = RelayService.Instance.GetTrackingDevice(guid);
+        return device.IsSkeletonTracked ? device.TrackedJoints.ToList() : null;
     }
 
     public async Task<TrackingDevice> DeviceInitialize(string guid)
@@ -460,6 +464,18 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
     public async Task<string> GetRemoteHostname()
     {
         return $"{Environment.UserName}@{Environment.MachineName}";
+    }
+
+    protected override async ValueTask OnConnecting()
+    {
+        _group = await Group.AddAsync(Guid.NewGuid().ToString());
+        if (RelayService.Instance is not null)
+        {
+            RelayService.Instance.RequestShutdown = (reason, fatal) => Broadcast(_group).OnRequestShutdown(reason, fatal);
+            RelayService.Instance.RequestReload = () => Broadcast(_group).OnRefreshInterface();
+        }
+
+        await base.OnConnecting();
     }
 
     private string GetName(string guid)
