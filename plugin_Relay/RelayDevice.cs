@@ -146,11 +146,12 @@ public class RelayDevice : ITrackingDevice
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        Task.Delay(3000).ContinueWith(_ =>
-        {
-            Host?.Log("Trying to connect to the cached remote server...");
-            Initialize(); // Initialize the plugin now
-        });
+        if (!(RelayService.Instance?.IsBackfeed ?? false))
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                Host?.Log("Trying to connect to the cached remote server...");
+                Initialize(); // Initialize the plugin now
+            });
     }
 
     public void Initialize()
