@@ -18,7 +18,7 @@ public class Probe : IDisposable
     private readonly Thread _thread;
     private readonly UdpClient _udp = new();
     private readonly EventWaitHandle _waitHandle = new(false, EventResetMode.AutoReset);
-    private IEnumerable<BeaconLocation> _currentBeacons = Enumerable.Empty<BeaconLocation>();
+    private IEnumerable<BeaconLocation> _currentBeacons = [];
 
     private bool _running = true;
 

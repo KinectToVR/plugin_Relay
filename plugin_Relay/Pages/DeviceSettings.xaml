@@ -10,11 +10,17 @@
 	      RowDefinitions="Auto,Auto,Auto,*" RowSpacing="20">
 
 		<!--The panel title header-->
-		<TextBlock Text="Tracking Relay Settings" FontSize="32" Grid.Row="0"
-		           Margin="0,5,0,0" FontWeight="SemiBold" />
+		<Grid ColumnDefinitions="*, Auto" Grid.Row="0">
+			<TextBlock Text="{x:Bind Host.RequestLocalizedString('/Titles/Settings'), Mode=OneWay}"
+			           FontSize="32" Grid.Column="0" Margin="0,5,0,0" FontWeight="SemiBold" IsTabStop="True" />
+			<ToggleSwitch Margin="0,2,-108,0" OnContent="" OffContent=""
+			              IsOn="{x:Bind RelayReceiverEnabled, Mode=TwoWay}" Grid.Column="1"
+			              VerticalAlignment="Center" />
+		</Grid>
 
 		<!--Server connection controls-->
-		<Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,10,0,0" Grid.Row="1">
+		<Grid ColumnDefinitions="*,*" ColumnSpacing="15" Margin="0,10,0,0" Grid.Row="1"
+		      Opacity="{x:Bind SettingsOpacity, Mode=OneWay}" IsHitTestVisible="{x:Bind RelayReceiverEnabled, Mode=OneWay}">
 			<TextBox Text="{x:Bind Device.ServerIp, Mode=OneWay}" PlaceholderText="127.0.0.1" Grid.Column="0"
 			         Header="Web server address:" LostFocus="AddressTextBox_OnLostFocus" x:Name="ServerAddressBox" />
 			<NumberBox Value="{x:Bind Device.ServerPort, Mode=OneWay}" Maximum="65535"
@@ -24,7 +30,9 @@
 
 		<!--Status control grid with the refresh button-->
 		<StackPanel Style="{ThemeResource CardMiddleStyle}" Grid.Row="2"
-		            CornerRadius="4" Margin="0,0,0,8">
+		            CornerRadius="4" Margin="0,0,0,8"
+		            Opacity="{x:Bind SettingsOpacity, Mode=OneWay}"
+		            IsHitTestVisible="{x:Bind RelayReceiverEnabled, Mode=OneWay}">
 			<Grid Margin="5,0,0,0" HorizontalAlignment="Stretch">
 				<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,-3,0,0"
 				           Text="{x:Bind Host.RequestLocalizedString('/Titles/RelayStatus'), Mode=OneWay}"
@@ -132,7 +140,9 @@
 		<!--Devices available via the relay-->
 		<ScrollViewer HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
 		              VerticalScrollBarVisibility="Visible" Grid.Row="3"
-		              Margin="-8,0" Padding="8,0">
+		              Margin="-8,0" Padding="8,0"
+		              Opacity="{x:Bind SettingsOpacity, Mode=OneWay}"
+		              IsHitTestVisible="{x:Bind RelayReceiverEnabled, Mode=OneWay}">
 			<ScrollViewer.Transitions>
 				<TransitionCollection>
 					<RepositionThemeTransition />

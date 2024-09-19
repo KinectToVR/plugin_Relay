@@ -42,6 +42,10 @@
 						"translation": "Status:"
 				},
 				{
+						"id": "/Titles/Settings",
+						"translation": "Tracking Relay Settings"
+				},
+				{
 						"id": "/Buttons/Copy",
 						"translation": "Copy Error"
 				},

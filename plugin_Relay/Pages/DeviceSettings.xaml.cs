@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.ApplicationModel.Resources.Core;
@@ -93,6 +94,19 @@ public sealed partial class DeviceSettings : UserControl, INotifyPropertyChanged
     private string DevicePingStatus { get; set; }
     public string DeviceStatusAppendix { get; set; } = string.Empty;
     public string DeviceStatusHeader => string.IsNullOrEmpty(DevicePingStatus) ? Device.StatusSplit[0] + DeviceStatusAppendix : DevicePingStatus;
+    private double SettingsOpacity => RelayReceiverEnabled ? 1.0 : 0.5;
+
+    private bool RelayReceiverEnabled
+    {
+        get => Device.RelayReceiverEnabled;
+        set
+        {
+            if (Device.RelayReceiverEnabled == value) return;
+            Device.RelayReceiverEnabled = value;
+            OnPropertyChanged(); // Refresh
+            Device.TriggerDevicePull(); // Pull
+        }
+    }
 
     private Dictionary<string, (string Name, ITrackingDevice Device)> RelayTrackingDevices
     {
@@ -136,14 +150,21 @@ public sealed partial class DeviceSettings : UserControl, INotifyPropertyChanged
 
         try
         {
-            var ping = await Device.Service.PingService();
-            DevicePingStatus = $"{Host.RequestLocalizedString("/Refresh/Ping")} {(DateTime.Now.Ticks - ping) / 10000} ms";
-            RefreshStatusInterface(); // Refresh without triggering a host refresh
+            var token = new CancellationTokenSource();
+            token.CancelAfter(5000);
 
-            Device.RelayHostname = await Device.Service.GetRemoteHostname();
-            Host.PluginSettings.SetSetting("CachedRelayHostname", Device.RelayHostname);
-            await Device.PullRemoteDevices(); // Finally do the thing! \^o^/ (no exceptions)
-            TryStopProbe(); // Stop the probe as we've connected successfully
+            await Task.Run(async () =>
+            {
+                token.Token.ThrowIfCancellationRequested();
+                var ping = await Device.Service.PingService();
+                DevicePingStatus = $"{Host.RequestLocalizedString("/Refresh/Ping")} {(DateTime.Now.Ticks - ping) / 10000} ms";
+                RefreshStatusInterface(); // Refresh without triggering a host refresh
+
+                Device.RelayHostname = await Device.Service.GetRemoteHostname();
+                Host.PluginSettings.SetSetting("CachedRelayHostname", Device.RelayHostname);
+                await Device.PullRemoteDevices(); // Finally do the thing! \^o^/ (no exceptions)
+                TryStopProbe(); // Stop the probe as we've connected successfully
+            }, token.Token).WaitAsync(token.Token);
         }
         catch (Exception ex)
         {

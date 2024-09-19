@@ -48,7 +48,7 @@ public class RelayDevice : ITrackingDevice
     {
         get
         {
-            if (Host is null || !PluginLoaded) return []; // Completely give up for now
+            if (Host is null || !PluginLoaded || !RelayReceiverEnabled) return []; // Completely give up for now
             var blacklist = Host.PluginSettings.GetSetting("DevicesBlacklist", new SortedSet<string>());
 
             return (DeviceStatus is not 0
@@ -86,6 +86,15 @@ public class RelayDevice : ITrackingDevice
         set
         {
             if (PluginLoaded) Host?.PluginSettings.SetSetting("ClientPort", value);
+        }
+    }
+
+    public bool RelayReceiverEnabled
+    {
+        get => PluginLoaded && (Host?.PluginSettings.GetSetting("RelayReceiverEnabled", false) ?? false);
+        set
+        {
+            if (PluginLoaded) Host?.PluginSettings.SetSetting("RelayReceiverEnabled", value);
         }
     }
 
@@ -146,11 +155,11 @@ public class RelayDevice : ITrackingDevice
             VerticalAlignment = VerticalAlignment.Stretch
         };
 
-        if (!(RelayService.Instance?.IsBackfeed ?? false))
+        if (RelayReceiverEnabled)
             Task.Delay(3000).ContinueWith(_ =>
             {
                 Host?.Log("Trying to connect to the cached remote server...");
-                Initialize(); // Initialize the plugin now
+                if (!(RelayService.Instance?.IsBackfeed ?? false)) Initialize();
             });
     }
 

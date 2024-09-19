@@ -188,7 +188,7 @@ public class RelayService : IServiceEndpoint
             ServerHost = MagicOnionHost.CreateDefaultBuilder()
                 .UseMagicOnion(types: [typeof(DataService)],
                     options: new MagicOnionOptions { IsReturnExceptionStackTraceInErrorDetail = true },
-                    ports: [new ServerPort("127.0.0.1", ServerPort, ServerCredentials.Insecure)],
+                    ports: [new ServerPort("0.0.0.0", ServerPort, ServerCredentials.Insecure)],
                     channelOptions:
                     [
                         new ChannelOption(ChannelOptions.MaxReceiveMessageLength, -1),
@@ -314,6 +314,16 @@ public class RelayService : IServiceEndpoint
 
         try
         {
+            ServerBeacon?.Stop();
+        }
+        catch (Exception e)
+        {
+            Host?.Log(e);
+        }
+
+        try
+        {
+            ServerBeacon?.Stop();
             ServerToken?.Cancel();
             ServerHost?.StopAsync();
 
