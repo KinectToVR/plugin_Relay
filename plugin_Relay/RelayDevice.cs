@@ -6,16 +6,17 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Amethyst.Plugins.Contract;
-using Grpc.Core;
-using MagicOnion.Client;
-using MessagePack;
+using MemoryPack;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using plugin_Relay.Models;
 using plugin_Relay.Pages;
-using Windows.Networking.Connectivity;
+using Microsoft.Extensions.Logging;
+using Stl.Rpc;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,7 +41,7 @@ public class RelayDevice : ITrackingDevice
 
     private Page InterfaceRoot { get; set; }
     public Exception InitException { get; set; }
-    private Channel ServiceChannel { get; set; }
+    private ServiceProvider ServiceChannel { get; set; }
     public IRelayService Service { get; set; }
     public List<TrackingDevice> TrackingDevices { get; set; } = [];
 
@@ -170,14 +171,8 @@ public class RelayDevice : ITrackingDevice
 
         try
         {
-            MessagePackSerializer.DefaultOptions =
-                MessagePackSerializerOptions.Standard.WithResolver(new CustomResolver());
-
-            var options = new[]
-            {
-                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, -1),
-                new ChannelOption(ChannelOptions.MaxSendMessageLength, -1)
-            };
+            MemoryPackFormatterProvider.Register(new TrackingDeviceFormatter());
+            MemoryPackFormatterProvider.Register(new TrackedJointFormatter());
 
             if (RelayService.Instance?.IsBackfeed ?? false)
             {
@@ -187,8 +182,16 @@ public class RelayDevice : ITrackingDevice
                 return; // Don't proceed further
             }
 
-            ServiceChannel = new Channel(ServerIp is "127.0.0.1" ? "localhost" : ServerIp, ServerPort, ChannelCredentials.Insecure, options);
-            Service = StreamingHubClient.Connect<IRelayService, IRelayClient>(ServiceChannel, new DataClient());
+            var services = new ServiceCollection()
+                .AddLogging(logging => logging.AddConsole());
+
+            services.AddRpc()
+                .AddWebSocketClient($"http://{ServerIp}:{ServerPort}/")
+                .AddClient<IRelayService>()
+                .AddServer<IRelayClient, DataClient>();
+
+            ServiceChannel = services.BuildServiceProvider();
+            Service = ServiceChannel.GetRequiredService<IRelayService>();
 
             SettingsPage.DeviceStatusAppendix = string.Empty;
             SettingsPage.StartConnectionTest();
@@ -339,13 +342,15 @@ public enum RelayDeviceStatus
 // ReSharper disable once UnusedMember.Global
 public class DataClient : IRelayClient
 {
-    public void OnRequestShutdown(string reason = "", bool fatal = false)
+    public Task OnRequestShutdown(string reason = "", bool fatal = false, CancellationToken cancellationToken = default)
     {
         RelayDevice.Instance?.Host?.RequestExit(reason, fatal);
+        return Task.CompletedTask;
     }
 
-    public void OnRefreshInterface(string reason = "", bool fatal = false)
+    public Task OnRefreshInterface(CancellationToken cancellationToken = default)
     {
         RelayDevice.Instance?.Host?.RefreshStatusInterface();
+        return Task.CompletedTask;
     }
 }

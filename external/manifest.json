@@ -1,7 +1,7 @@
 {
-    "version": "1.0.0.1",
+    "version": "1.0.0.2",
     "display_name": "Amethyst Tracking Relay",
     "download": "plugin_Relay.zip",
-    "changelog": "Initial release.",
+    "changelog": "New transport layer.",
     "guid": "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY"
 }

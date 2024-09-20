@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Drawing.Drawing2D;
+using System.Numerics;
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media.Animation;
 using Amethyst.Plugins.Contract;
+using MemoryPack;
 using MessagePack;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -46,7 +51,6 @@ public class TrackingDevice : ITrackingDevice
     [IgnoreMember] [JsonIgnore] public Action<Exception> SetError { get; set; }
     [Key(0)] public string DeviceGuid { get; set; } = string.Empty;
     [Key(12)] public string DeviceName { get; set; }
-    //[Key(13)] public Guid SessionGuid { get; set; }
 
     public void Initialize()
     {
@@ -94,8 +98,6 @@ public class TrackingDevice : ITrackingDevice
 
     public void Update()
     {
-        // TODO pull tracked joints from the server
-
         if (string.IsNullOrEmpty(DeviceGuid) || HostService is null || Host is null) return;
         try
         {
@@ -104,7 +106,7 @@ public class TrackingDevice : ITrackingDevice
 
             Task.Run(async () =>
             {
-                var joints = await HostService.GetTrackedJoints(DeviceGuid);
+                var joints = await HostService.GetTrackedJoints(DeviceGuid, source.Token);
                 if (joints is null || joints.Count < 1)
                 {
                     IsSkeletonTracked = false;
@@ -173,4 +175,100 @@ public class TrackingDevice : ITrackingDevice
             }
         }
         : null;
+}
+
+[MemoryPackable]
+public readonly partial struct SerializableTrackingDevice
+{
+    [MemoryPackIgnore] public readonly TrackingDevice TrackingDevice;
+
+    [MemoryPackInclude] public string DeviceGuid => TrackingDevice.DeviceGuid;
+    [MemoryPackInclude] public ObservableCollection<TrackedJoint> TrackedJoints => TrackingDevice.TrackedJoints;
+    [MemoryPackInclude] public bool IsInitialized => TrackingDevice.IsInitialized;
+    [MemoryPackInclude] public bool IsSkeletonTracked => TrackingDevice.IsSkeletonTracked;
+    [MemoryPackInclude] public bool IsPositionFilterBlockingEnabled => TrackingDevice.IsPositionFilterBlockingEnabled;
+    [MemoryPackInclude] public bool IsPhysicsOverrideEnabled => TrackingDevice.IsPhysicsOverrideEnabled;
+    [MemoryPackInclude] public bool IsFlipSupported => TrackingDevice.IsFlipSupported;
+    [MemoryPackInclude] public bool IsAppOrientationSupported => TrackingDevice.IsAppOrientationSupported;
+    [MemoryPackInclude] public bool IsSettingsDaemonSupported => TrackingDevice.IsSettingsDaemonSupported;
+    [MemoryPackInclude] public int RemoteDeviceStatus => TrackingDevice.RemoteDeviceStatus;
+    [MemoryPackInclude] public string RemoteDeviceStatusString => TrackingDevice.RemoteDeviceStatusString;
+    [MemoryPackInclude] public Uri ErrorDocsUri => TrackingDevice.ErrorDocsUri;
+    [MemoryPackInclude] public string DeviceName => TrackingDevice.DeviceName;
+
+    [MemoryPackConstructor]
+    private SerializableTrackingDevice(
+        string deviceGuid,
+        ObservableCollection<TrackedJoint> trackedJoints,
+        bool isInitialized,
+        bool isSkeletonTracked,
+        bool isPositionFilterBlockingEnabled,
+        bool isPhysicsOverrideEnabled,
+        bool isFlipSupported,
+        bool isAppOrientationSupported,
+        bool isSettingsDaemonSupported,
+        int remoteDeviceStatus,
+        string remoteDeviceStatusString,
+        Uri errorDocsUri,
+        string deviceName
+    )
+    {
+        TrackingDevice = new TrackingDevice
+        {
+            DeviceGuid = deviceGuid,
+            TrackedJoints = trackedJoints,
+            IsInitialized = isInitialized,
+            IsSkeletonTracked = isSkeletonTracked,
+            IsPositionFilterBlockingEnabled = isPositionFilterBlockingEnabled,
+            IsPhysicsOverrideEnabled = isPhysicsOverrideEnabled,
+            IsFlipSupported = isFlipSupported,
+            IsAppOrientationSupported = isAppOrientationSupported,
+            IsSettingsDaemonSupported = isSettingsDaemonSupported,
+            RemoteDeviceStatus = remoteDeviceStatus,
+            RemoteDeviceStatusString = remoteDeviceStatusString,
+            ErrorDocsUri = errorDocsUri,
+            DeviceName = deviceName
+        };
+    }
+
+    public SerializableTrackingDevice(TrackingDevice trackingDevice)
+    {
+        TrackingDevice = trackingDevice;
+    }
+}
+
+[MemoryPackable]
+public readonly partial struct SerializableTrackedJoint
+{
+    [MemoryPackIgnore] public readonly TrackedJoint TrackedJoint;
+
+    [MemoryPackInclude] public string Name => TrackedJoint.Name;
+    [MemoryPackInclude] public TrackedJointType Role => TrackedJoint.Role;
+    [MemoryPackInclude] public Vector3 Position => TrackedJoint.Position;
+    [MemoryPackInclude] public Quaternion Orientation => TrackedJoint.Orientation;
+    [MemoryPackInclude] public TrackedJointState TrackingState => TrackedJoint.TrackingState;
+
+    [MemoryPackConstructor]
+    private SerializableTrackedJoint(
+        string name,
+        TrackedJointType role,
+        Vector3 position,
+        Quaternion orientation,
+        TrackedJointState trackingState
+    )
+    {
+        TrackedJoint = new TrackedJoint
+        {
+            Name = name,
+            Role = role,
+            Position = position,
+            Orientation = orientation,
+            TrackingState = trackingState
+        };
+    }
+
+    public SerializableTrackedJoint(TrackedJoint trackedJoint)
+    {
+        TrackedJoint = trackedJoint;
+    }
 }

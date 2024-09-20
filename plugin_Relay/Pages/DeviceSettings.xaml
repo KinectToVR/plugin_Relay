@@ -74,6 +74,7 @@
 			<InfoBar IsOpen="{x:Bind DiscoveryBarData.IsOpen, Mode=OneWay}"
 			         IsClosable="{x:Bind DiscoveryBarData.Closable, Mode=OneWay}"
 			         Margin="0, 7, 0, 2" Severity="Informational"
+			         Visibility="{x:Bind DiscoveryBarData.IsOpen, Mode=OneWay}"
 			         Title="{x:Bind DiscoveryBarData.Title, Mode=OneWay}" Message="">
 
 				<InfoBar.ActionButton>
@@ -157,7 +158,7 @@
 							<Grid Margin="10,0,0,0" HorizontalAlignment="Stretch">
 								<Grid ColumnDefinitions="Auto, *">
 									<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="SemiBold"
-									           Text="{x:Bind Name, Mode=OneWay}" FontSize="16" />
+									           Text="{x:Bind Name}" FontSize="16" />
 									<TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="1"
 									           Text="{x:Bind Host.Device.RelayHostname, Mode=OneWay}"
 									           Margin="6,0,0,0" FontSize="15" TextTrimming="CharacterEllipsis"

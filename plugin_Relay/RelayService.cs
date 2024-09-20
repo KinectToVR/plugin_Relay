@@ -8,10 +8,6 @@ using System.Threading.Tasks;
 using Windows.Networking;
 using Windows.Networking.Connectivity;
 using Amethyst.Plugins.Contract;
-using Grpc.Core;
-using MagicOnion.Hosting;
-using MagicOnion.Server;
-using MagicOnion.Server.Hubs;
 using MessagePack;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +15,12 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using plugin_Relay.Models;
+using Stl.Rpc;
 using IServiceEndpoint = Amethyst.Plugins.Contract.IServiceEndpoint;
+using Microsoft.AspNetCore.Builder;
+using Stl.Rpc.Server;
+using MemoryPack;
+using Microsoft.Extensions.Logging;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
@@ -82,8 +83,8 @@ public class RelayService : IServiceEndpoint
         }
     }
 
-    public Action<string, bool> RequestShutdown { get; set; }
-    public Action RequestReload { get; set; }
+    public Action<string, bool, CancellationToken> RequestShutdown { get; set; }
+    public Action<CancellationToken> RequestReload { get; set; } // Used by ame
 
     public bool IsBackfeed
     {
@@ -181,29 +182,38 @@ public class RelayService : IServiceEndpoint
 
         try
         {
-            MessagePackSerializer.DefaultOptions =
-                MessagePackSerializerOptions.Standard.WithResolver(new CustomResolver());
+            MemoryPackFormatterProvider.Register(new TrackingDeviceFormatter());
+            MemoryPackFormatterProvider.Register(new TrackedJointFormatter());
 
             ServerToken = new CancellationTokenSource();
-            ServerHost = MagicOnionHost.CreateDefaultBuilder()
-                .UseMagicOnion(types: [typeof(DataService)],
-                    options: new MagicOnionOptions { IsReturnExceptionStackTraceInErrorDetail = true },
-                    ports: [new ServerPort("0.0.0.0", ServerPort, ServerCredentials.Insecure)],
-                    channelOptions:
-                    [
-                        new ChannelOption(ChannelOptions.MaxReceiveMessageLength, -1),
-                        new ChannelOption(ChannelOptions.MaxSendMessageLength, -1)
-                    ])
-                .ConfigureServices((_, services) =>
-                {
-                    services.Configure<MagicOnionHostingOptions>(options =>
-                    {
-                        options.ChannelOptions.MaxReceiveMessageLength = -1;
-                        options.ChannelOptions.MaxSendMessageLength = -1;
-                    });
-                })
-                .Build();
+            var builder = WebApplication.CreateBuilder();
 
+            builder.Logging.ClearProviders()
+                .AddProvider(new AmethystHostLoggerProvider(Host));
+
+            var rpc = builder.Services.AddRpc();
+            rpc.AddWebSocketServer();
+            rpc.AddServer<IRelayService, DataService>()
+                .AddClient<IRelayClient>();
+
+            builder.Services.AddSingleton<RpcCallRouter>(c =>
+            {
+                RpcHub rpcHub = null; // Necessary because of IRelayClient, which requires call routing
+                return (methodDef, args) =>
+                {
+                    rpcHub ??= c.RpcHub(); // We can't resolve it earlier, coz otherwise it will trigger recursion
+                    if (methodDef.Service.Type != typeof(IRelayClient)) return rpcHub.GetClientPeer(RpcPeerRef.Default);
+                    var peerRef = new RpcPeerRef(args.Get<Stl.Text.Symbol>(0), true);
+                    return rpcHub.GetServerPeer(peerRef);
+                };
+            });
+
+            var app = builder.Build();
+            app.Urls.Add($"http://0.0.0.0:{ServerPort}/");
+            app.UseWebSockets();
+            app.MapRpcWebSocketServer();
+
+            ServerHost = app;
             ServerTask = ServerHost.StartAsync(ServerToken.Token);
             RefreshTextBlock.Visibility = Visibility.Collapsed;
             Host?.RefreshStatusInterface();
@@ -372,6 +382,15 @@ public class RelayService : IServiceEndpoint
 
     ~RelayService()
     {
+        try
+        {
+            RequestShutdown?.Invoke("Server shutting down!", false, default);
+        }
+        catch (Exception e)
+        {
+            Host?.Log(e);
+        }
+
         Instance = null;
         IsShuttingDown = true;
     }
@@ -400,37 +419,40 @@ public class RelayService : IServiceEndpoint
 }
 
 // ReSharper disable once UnusedMember.Global
-public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelayService
+public class DataService(IRelayClient client) : IRelayService
 {
-    private IGroup _group;
-
-    public async Task<long> PingService()
+    public async Task<long> PingService(CancellationToken cancellationToken = default)
     {
+        if (RelayService.Instance is null || client is null) return DateTime.Now.Ticks;
+
+        RelayService.Instance.RequestShutdown = (s, b, a) => client.OnRequestShutdown(s, b, a);
+        RelayService.Instance.RequestReload = token => client.OnRefreshInterface(token);
+
         return DateTime.Now.Ticks;
     }
 
-    public async Task<bool> RequestShutdown(string reason = "", bool fatal = false)
+    public async Task<bool> RequestShutdown(string reason = "", bool fatal = false, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return false;
         RelayService.Instance.Host?.RequestExit(reason, fatal);
         return true; // Should be fine (probably)
     }
 
-    public async Task<List<TrackingDevice>> ListTrackingDevices()
+    public async Task<List<TrackingDevice>> ListTrackingDevices(CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         return RelayService.Instance.GetTrackingDevices()
             .Select(x => new TrackingDevice(x.Value) { DeviceGuid = x.Key, DeviceName = GetName(x.Key) }).ToList();
     }
 
-    public async Task<TrackingDevice> GetTrackingDevice(string guid)
+    public async Task<TrackingDevice> GetTrackingDevice(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         return new TrackingDevice(RelayService.Instance
             .GetTrackingDevice(guid)) { DeviceGuid = guid, DeviceName = GetName(guid) };
     }
 
-    public async Task<List<TrackedJoint>> GetTrackedJoints(string guid)
+    public async Task<List<TrackedJoint>> GetTrackedJoints(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         RelayService.Instance.DevicesToUpdate.Add(guid); // Mark the device as used
@@ -438,7 +460,7 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
         return device.IsSkeletonTracked ? device.TrackedJoints.ToList() : null;
     }
 
-    public async Task<TrackingDevice> DeviceInitialize(string guid)
+    public async Task<TrackingDevice> DeviceInitialize(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         var device = RelayService.Instance.GetTrackingDevice(guid);
@@ -450,7 +472,7 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
         return new TrackingDevice(device) { DeviceGuid = guid, DeviceName = GetName(guid) };
     }
 
-    public async Task<TrackingDevice> DeviceShutdown(string guid)
+    public async Task<TrackingDevice> DeviceShutdown(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         var device = RelayService.Instance.GetTrackingDevice(guid);
@@ -462,7 +484,7 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
         return new TrackingDevice(device) { DeviceGuid = guid, DeviceName = GetName(guid) };
     }
 
-    public async Task<TrackingDevice> DeviceSignalJoint(string guid, int jointId)
+    public async Task<TrackingDevice> DeviceSignalJoint(string guid, int jointId, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         var device = RelayService.Instance.GetTrackingDevice(guid);
@@ -471,24 +493,12 @@ public class DataService : StreamingHubBase<IRelayService, IRelayClient>, IRelay
         return new TrackingDevice(device) { DeviceGuid = guid, DeviceName = GetName(guid) };
     }
 
-    public async Task<string> GetRemoteHostname()
+    public async Task<string> GetRemoteHostname(CancellationToken cancellationToken = default)
     {
         return $"{Environment.UserName}@{Environment.MachineName}";
     }
 
-    protected override async ValueTask OnConnecting()
-    {
-        _group = await Group.AddAsync(Guid.NewGuid().ToString());
-        if (RelayService.Instance is not null)
-        {
-            RelayService.Instance.RequestShutdown = (reason, fatal) => Broadcast(_group).OnRequestShutdown(reason, fatal);
-            RelayService.Instance.RequestReload = () => Broadcast(_group).OnRefreshInterface();
-        }
-
-        await base.OnConnecting();
-    }
-
-    private string GetName(string guid)
+    private string GetName(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
         var info = RelayService.Instance.Host.GetType().GetMethod("GetDeviceName", [typeof(string)]);

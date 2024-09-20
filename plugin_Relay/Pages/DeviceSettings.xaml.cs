@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -156,11 +157,14 @@ public sealed partial class DeviceSettings : UserControl, INotifyPropertyChanged
             await Task.Run(async () =>
             {
                 token.Token.ThrowIfCancellationRequested();
-                var ping = await Device.Service.PingService();
-                DevicePingStatus = $"{Host.RequestLocalizedString("/Refresh/Ping")} {(DateTime.Now.Ticks - ping) / 10000} ms";
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                await Device.Service.PingService(token.Token).ContinueWith(_ => stopwatch.Stop(), token.Token);
+                //stopwatch.Stop();
+                DevicePingStatus = $"{Host.RequestLocalizedString("/Refresh/Ping")} {stopwatch.ElapsedMilliseconds} ms";
                 RefreshStatusInterface(); // Refresh without triggering a host refresh
 
-                Device.RelayHostname = await Device.Service.GetRemoteHostname();
+                Device.RelayHostname = await Device.Service.GetRemoteHostname(token.Token);
                 Host.PluginSettings.SetSetting("CachedRelayHostname", Device.RelayHostname);
                 await Device.PullRemoteDevices(); // Finally do the thing! \^o^/ (no exceptions)
                 TryStopProbe(); // Stop the probe as we've connected successfully
@@ -212,7 +216,7 @@ public sealed partial class DeviceSettings : UserControl, INotifyPropertyChanged
 
     private void SetDiscoveryNotice(IPEndPoint address = null)
     {
-        if (Equals(DiscoveryBarData?.Address, address)) return;
+        if (Equals(DiscoveryBarData?.Address, address) && address is not null) return;
         DiscoveryBarData = address is null
             ? new InfoBarData()
             : new InfoBarData

@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# MA0003: Add parameter name to improve readability
+dotnet_diagnostic.MA0003.severity = none
