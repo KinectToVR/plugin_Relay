@@ -30,7 +30,7 @@ namespace plugin_Relay;
 [ExportMetadata("Name", "Amethyst Tracking Relay")]
 [ExportMetadata("Guid", "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")]
 [ExportMetadata("Publisher", "K2VR Team")]
-[ExportMetadata("Version", "1.0.0.1")]
+[ExportMetadata("Version", "1.0.0.3")]
 [ExportMetadata("Website", "https://github.com/KimihikoAkayasaki/plugin_Relay")]
 public class RelayService : IServiceEndpoint
 {
@@ -167,10 +167,17 @@ public class RelayService : IServiceEndpoint
     public void Heartbeat()
     {
         if (ServiceStatus != 0 || Host is null) return;
-        lock (Host.UpdateThreadLock)
+        try
         {
-            DevicesToUpdate.Select(guid => _trackingDevices.GetValueOrDefault(guid, null))
-                .Where(x => x is not null).Where(x => !x.IsSelfUpdateEnabled).ToList().ForEach(x => x.Update());
+            lock (Host.UpdateThreadLock)
+            {
+                DevicesToUpdate.Select(guid => _trackingDevices.GetValueOrDefault(guid, null))
+                    .Where(x => x is not null).Where(x => !x.IsSelfUpdateEnabled).ToList().ForEach(x => x.Update());
+            }
+        }
+        catch (Exception ex)
+        {
+            Host?.Log(ex);
         }
     }
 
@@ -455,7 +462,12 @@ public class DataService(IRelayClient client) : IRelayService
     public async Task<List<TrackedJoint>> GetTrackedJoints(string guid, CancellationToken cancellationToken = default)
     {
         if (RelayService.Instance is null) return null;
-        RelayService.Instance.DevicesToUpdate.Add(guid); // Mark the device as used
+        if (!RelayService.Instance.DevicesToUpdate.Contains(guid))
+            lock (RelayService.Instance.Host.UpdateThreadLock)
+            {
+                RelayService.Instance.DevicesToUpdate.Add(guid); // Mark the device as used
+            }
+
         var device = RelayService.Instance.GetTrackingDevice(guid);
         return device.IsSkeletonTracked ? device.TrackedJoints.ToList() : null;
     }

@@ -27,7 +27,7 @@ namespace plugin_Relay;
 [ExportMetadata("Name", "Amethyst Tracking Relay")]
 [ExportMetadata("Guid", "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")]
 [ExportMetadata("Publisher", "K2VR Team")]
-[ExportMetadata("Version", "1.0.0.1")]
+[ExportMetadata("Version", "1.0.0.3")]
 [ExportMetadata("Website", "https://github.com/KimihikoAkayasaki/plugin_Relay")]
 public class RelayDevice : ITrackingDevice
 {
