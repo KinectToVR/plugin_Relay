@@ -24,15 +24,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Amethyst.Plugins.Contract" Version="0.2.25" />
+		<PackageReference Include="Amethyst.Plugins.Contract" Version="0.3.33" />
 		<PackageReference Include="MemoryPack" Version="1.10.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
 		<PackageReference Include="Stl.Generators" Version="6.8.11" />
 		<PackageReference Include="Stl.Rpc" Version="6.8.11" />
 		<PackageReference Include="Stl.Rpc.Server" Version="6.8.11" />
-		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
-		<PackageReference Include="System.ComponentModel.Composition.Registration" Version="8.0.0" />
+		<PackageReference Include="System.ComponentModel.Composition" Version="9.0.0" />
+		<PackageReference Include="System.ComponentModel.Composition.Registration" Version="9.0.0" />
 		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1" />
 	</ItemGroup>

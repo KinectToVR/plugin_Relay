@@ -30,7 +30,7 @@ namespace plugin_Relay;
 [ExportMetadata("Name", "Amethyst Tracking Relay")]
 [ExportMetadata("Guid", "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")]
 [ExportMetadata("Publisher", "K2VR Team")]
-[ExportMetadata("Version", "1.0.0.3")]
+[ExportMetadata("Version", "1.0.0.4")]
 [ExportMetadata("Website", "https://github.com/KimihikoAkayasaki/plugin_Relay")]
 public class RelayService : IServiceEndpoint
 {
@@ -101,6 +101,7 @@ public class RelayService : IServiceEndpoint
     public bool IsSettingsDaemonSupported => true;
     public int ServiceStatus { get; set; } = -1;
     public Uri ErrorDocsUri => new("https://docs.k2vr.tech/");
+    public Dictionary<TrackerType, SortedSet<IKeyInputAction>> SupportedInputActions => [];
     public bool IsAmethystVisible => true;
     public bool IsRestartOnChangesNeeded => false;
     public bool CanAutoStartAmethyst => false;
@@ -179,6 +180,11 @@ public class RelayService : IServiceEndpoint
         {
             Host?.Log(ex);
         }
+    }
+
+    public Task ProcessKeyInput(IKeyInputAction action, object data, TrackerType? receiver, CancellationToken? token = null)
+    {
+        return Task.CompletedTask;
     }
 
     // This initializes/connects to the service
