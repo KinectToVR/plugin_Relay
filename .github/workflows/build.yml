@@ -23,11 +23,11 @@ jobs:
         uses: microsoft/setup-msbuild@v1.1
 
       - name: Restore and build (publish)
-        run: msbuild plugin_Relay /restore /p:Platform=x64 /p:PlatformTarget=x64 /p:Configuration=Release /p:RuntimeIdentifier=win10-x64 /t:Publish /p:PublishProfile=plugin_Relay\Properties\PublishProfiles\FolderProfile.pubxml
+        run: msbuild plugin_Relay /restore /p:Platform=x64 /p:PlatformTarget=x64 /p:Configuration=Release /p:RuntimeIdentifier=win-x64 /t:Publish /p:PublishProfile=plugin_Relay\Properties\PublishProfiles\FolderProfile.pubxml
         
       - name: Pack published files
         run: |
-          cd plugin_Relay/bin/Release/net7.0/win10-x64/publish
+          cd plugin_Relay/bin/Release/net8.0/win-x64/publish
           7z a plugin_Relay.zip *
         
       - name: Upload plugin artifact
@@ -38,5 +38,5 @@ jobs:
           prerelease: true
           title: "plugin_Relay Build Artifact"
           files: |
-            ./plugin_Relay/bin/Release/net7.0/win10-x64/publish/plugin_Relay.zip
+            ./plugin_Relay/bin/Release/net8.0/win-x64/publish/plugin_Relay.zip
             ./external/manifest.json
