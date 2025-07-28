@@ -1,0 +1,137 @@
+{
+  "language": "it",
+  "messages": [
+    {
+      "id": "/Statuses/Success",
+      "translation": "Successo!\nS_OK\nTutto a posto!"
+    },
+    {
+      "id": "/Statuses/Failure",
+      "translation": "Errore!\nS_SHUT\nIl dispositivo è offline!"
+    },
+    {
+      "id": "/Statuses/Exception",
+      "translation": "Errore del server!\nE_EXCEPTION\nIl server non è stato configurato correttamente a causa di un'errore fatale: {}"
+    },
+    {
+      "id": "/Statuses/WasShutDown",
+      "translation": "Server spento!\nS_SHUTBYUSER\nIl server è stato spento manualmente, clicca su 'Aggiorna' per riavviarlo."
+    },
+    {
+      "id": "/Settings/Labels/LocalIP/One",
+      "translation": "Il tuo IP locale:"
+    },
+    {
+      "id": "/Settings/Labels/LocalIP/Multiple",
+      "translation": "Il tuo IP locale: (Uno di)"
+    },
+    {
+      "id": "/Settings/Labels/Port",
+      "translation": "Porta server web:"
+    },
+    {
+      "id": "/Buttons/Reconnect",
+      "translation": "Riconnetti"
+    },
+    {
+      "id": "/Buttons/Disconnect",
+      "translation": "Disconnetti"
+    },
+    {
+      "id": "/Titles/RelayStatus",
+      "translation": "Stato:"
+    },
+    {
+      "id": "/Titles/Settings",
+      "translation": "Impostazioni del ripetitore di tracciamento"
+    },
+    {
+      "id": "/Buttons/Copy",
+      "translation": "Copia errore"
+    },
+    {
+      "id": "/Buttons/JoinDiscord",
+      "translation": "Unisciti a Discord"
+    },
+    {
+      "id": "/Cached",
+      "translation": "(Memorizzato nella cache)"
+    },
+    {
+      "id": "/Refresh/Test",
+      "translation": "Test connessione al servizio..."
+    },
+    {
+      "id": "/Refresh/Ping",
+      "translation": "Tempo di ping testato:"
+    },
+    {
+      "id": "/Refresh/Error",
+      "translation": "Errore di connessione:"
+    },
+    {
+      "id": "/Refresh/Apply",
+      "translation": " (Riconnetti per applicare le impostazioni aggiornate)"
+    },
+    {
+      "id": "/Refresh/ApplyServer",
+      "translation": "Clicca su 'Aggiorna' per applicare"
+    },
+    {
+      "id": "/Statuses/Failure/Version",
+      "translation": "Impossibile leggere i dati di tracciamento!\nE_UNAVAILABLE\nStai usando una versione di Amethyst non supportata."
+    },
+    {
+      "id": "/Settings/Discovery/Header",
+      "translation": "Server Amethyst Tracking Relay scoperto su {}!"
+    },
+    {
+      "id": "/Settings/Discovery/Subtitle",
+      "translation": "Vuoi connetterti?"
+    },
+    {
+      "id": "/Statuses/Discovery/Connect",
+      "translation": "Connetti"
+    },
+    {
+      "id": "/RelayStatuses/Success",
+      "translation": "Successo!\nS_OK\nTutto a posto!"
+    },
+    {
+      "id": "/RelayStatuses/ServiceError",
+      "translation": "Errore del servizio!\nE_SERVICE_ERRROR\nIl servizio di ricezione dati non è stato istanziato a causa di un errore. {}"
+    },
+    {
+      "id": "/RelayStatuses/ConnectionError",
+      "translation": "Errore di connessione!\nE_CONNECTION_ERRROR\nImpossibile connettersi al server del servizio dati a causa di un errore. {}"
+    },
+    {
+      "id": "/RelayStatuses/ConnectionLost",
+      "translation": "Connessione persa!\nE_CONNECTION_LOST\nLa connessione al server del servizio dati è stata persa a causa di un errore. {}"
+    },
+    {
+      "id": "/RelayStatuses/DevicesListEmpty",
+      "translation": "Nessun dispositivo remoto!\nE_NO_DEVICES\nL'elenco dei dispositivi remoti ricevuto dal server era vuoto."
+    },
+    {
+      "id": "/RelayStatuses/BackFeedDetected",
+      "translation": "Backfeed rilevato!\nE_BACKFEED_CONF\nAmethyst non avrebbe dovuto creare fra i dispositivi. La tua configurazione non è supportata. La prossima volta fai qualcosa di più produttivo lmao."
+    },
+    {
+      "id": "/RelayStatuses/NotInitialized",
+      "translation": "Non inizializzato!\nE_NOTINITIALIZED\nIl client del servizio ripetitore non è inizializzato. Clicca su 'Aggiorna' per riavviarlo."
+    },
+    {
+      "id": "/RelayStatuses/Disconnected",
+      "translation": "Client disconnesso!\nE_DISCONNECTED\nIl client del servizio ripetitore è stato disconnesso. Clicca su 'Aggiorna' per riavviarlo."
+    },
+    {
+      "id": "/RelayStatuses/Other",
+      "translation": "Errore del servizio!\nE_OTHER\nSi è verificata un'errore inaspettato. {}"
+    },
+    {
+      "id": "/DeviceStatuses/Placeholder",
+      "translation": "Dispositivo remoto non disponibile!\nE_NOT_INITIALIZED\nRipetitore Tracking Amethyst non disponibile, questo dispositivo remoto non funzionerà al momento. Per risolvere, prova ad aggiornare il Ripetitore Tracking e a controllarne lo stato."
+    }
+  ]
+}
