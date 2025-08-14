@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using System;
@@ -27,7 +27,7 @@ namespace plugin_Relay;
 [ExportMetadata("Name", "Amethyst Tracking Relay")]
 [ExportMetadata("Guid", "K2VRTEAM-AME2-APII-DVCE-TRACKINGRELAY")]
 [ExportMetadata("Publisher", "K2VR Team")]
-[ExportMetadata("Version", "1.0.0.4")]
+[ExportMetadata("Version", "1.0.0.5")]
 [ExportMetadata("Website", "https://github.com/KimihikoAkayasaki/plugin_Relay")]
 public class RelayDevice : ITrackingDevice
 {
