@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
@@ -369,8 +369,8 @@ public class RelayService : IServiceEndpoint
 
     public async Task<(int Status, string StatusMessage, long PingTime)> TestConnection()
     {
-        return (ServerTask.Status is TaskStatus.Running ? 0 : 1,
-            ServerTask.Status is TaskStatus.Running ? "OK" : $"Server status is {ServerTask.Status}", 0L);
+        return (ServerTask?.Status is TaskStatus.Running ? 0 : 1,
+            ServerTask?.Status is TaskStatus.Running ? "OK" : $"Server status is {ServerTask?.Status ?? TaskStatus.Canceled}", 0L);
     }
 
     public Task<IEnumerable<(TrackerBase Tracker, bool Success)>> SetTrackerStates(
