@@ -99,11 +99,11 @@
     },
     {
       "id": "/RelayStatuses/ServiceError",
-      "translation": "Errore del servizio!\nE_SERVICE_ERRROR\nIl servizio di ricezione dati non è stato istanziato a causa di un errore. {}"
+      "translation": "Errore del servizio!\nE_SERVICE_ERROR\nIl servizio di ricezione dati non è stato istanziato a causa di un errore. {}"
     },
     {
       "id": "/RelayStatuses/ConnectionError",
-      "translation": "Errore di connessione!\nE_CONNECTION_ERRROR\nImpossibile connettersi al server del servizio dati a causa di un errore. {}"
+      "translation": "Errore di connessione!\nE_CONNECTION_ERROR\nImpossibile connettersi al server del servizio dati a causa di un errore. {}"
     },
     {
       "id": "/RelayStatuses/ConnectionLost",
