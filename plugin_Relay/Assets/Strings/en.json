@@ -99,11 +99,11 @@
 				},
 				{
 						"id": "/RelayStatuses/ServiceError",
-						"translation": "Service error!\nE_SERVICE_ERRROR\nThe data receiver service couldn't be instantiated due to an error. {}"
+						"translation": "Service error!\nE_SERVICE_ERROR\nThe data receiver service couldn't be instantiated due to an error. {}"
 				},
 				{
 						"id": "/RelayStatuses/ConnectionError",
-						"translation": "Connection error!\nE_CONNECTION_ERRROR\nCouldn't connect to the data service server due to an error. {}"
+						"translation": "Connection error!\nE_CONNECTION_ERROR\nCouldn't connect to the data service server due to an error. {}"
 				},
 				{
 						"id": "/RelayStatuses/ConnectionLost",
