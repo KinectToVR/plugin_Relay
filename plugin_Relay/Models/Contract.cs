@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Amethyst.Plugins.Contract;
 using MemoryPack;
 using Microsoft.Extensions.Logging;
-using Stl.Rpc;
+using ActualLab.Rpc;
 
 namespace plugin_Relay.Models;
 

@@ -15,10 +15,10 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using plugin_Relay.Models;
-using Stl.Rpc;
+using ActualLab.Rpc;
 using IServiceEndpoint = Amethyst.Plugins.Contract.IServiceEndpoint;
 using Microsoft.AspNetCore.Builder;
-using Stl.Rpc.Server;
+using ActualLab.Rpc.Server;
 using MemoryPack;
 using Microsoft.Extensions.Logging;
 
@@ -208,18 +208,6 @@ public class RelayService : IServiceEndpoint
             rpc.AddWebSocketServer();
             rpc.AddServer<IRelayService, DataService>()
                 .AddClient<IRelayClient>();
-
-            builder.Services.AddSingleton<RpcCallRouter>(c =>
-            {
-                RpcHub rpcHub = null; // Necessary because of IRelayClient, which requires call routing
-                return (methodDef, args) =>
-                {
-                    rpcHub ??= c.RpcHub(); // We can't resolve it earlier, coz otherwise it will trigger recursion
-                    if (methodDef.Service.Type != typeof(IRelayClient)) return rpcHub.GetClientPeer(RpcPeerRef.Default);
-                    var peerRef = new RpcPeerRef(args.Get<Stl.Text.Symbol>(0), true);
-                    return rpcHub.GetServerPeer(peerRef);
-                };
-            });
 
             var app = builder.Build();
             app.Urls.Add($"http://0.0.0.0:{ServerPort}/");
