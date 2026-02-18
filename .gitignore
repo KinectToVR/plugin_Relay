@@ -57,12 +57,8 @@ BenchmarkDotNet.Artifacts/
 
 # .NET Core
 project.lock.json
-RelayTestServer/
 project.fragment.lock.json
 artifacts/
-publish_ms_out/
-publish_out/
-*.zip
 
 # StyleCop
 StyleCopReport.xml
