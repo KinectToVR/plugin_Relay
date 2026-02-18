@@ -16,7 +16,7 @@ using Microsoft.UI.Xaml.Controls;
 using plugin_Relay.Models;
 using plugin_Relay.Pages;
 using Microsoft.Extensions.Logging;
-using ActualLab.Rpc;
+using Stl.Rpc;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -169,29 +169,39 @@ public class RelayDevice : ITrackingDevice
         // Mark as initialized
         IsInitialized = true;
 
-        MemoryPackFormatterProvider.Register(new TrackingDeviceFormatter());
-        MemoryPackFormatterProvider.Register(new TrackedJointFormatter());
-
-        if (RelayService.Instance?.IsBackfeed ?? false)
+        try
         {
-            Status = RelayDeviceStatus.BackFeedDetected;
+            MemoryPackFormatterProvider.Register(new TrackingDeviceFormatter());
+            MemoryPackFormatterProvider.Register(new TrackedJointFormatter());
+
+            if (RelayService.Instance?.IsBackfeed ?? false)
+            {
+                Status = RelayDeviceStatus.BackFeedDetected;
+                SettingsPage.DeviceStatusAppendix = string.Empty;
+                InitException = null;
+                return; // Don't proceed further
+            }
+
+            var services = new ServiceCollection()
+                .AddLogging(logging => logging.AddConsole());
+
+            services.AddRpc()
+                .AddWebSocketClient($"http://{ServerIp}:{ServerPort}/")
+                .AddClient<IRelayService>()
+                .AddServer<IRelayClient, DataClient>();
+
+            ServiceChannel = services.BuildServiceProvider();
+            Service = ServiceChannel.GetRequiredService<IRelayService>();
+
             SettingsPage.DeviceStatusAppendix = string.Empty;
-            InitException = null;
-            return; // Don't proceed further
+            SettingsPage.StartConnectionTest();
         }
-
-        var services = new ServiceCollection()
-            .AddLogging();
-
-        services.AddRpc()
-            .AddWebSocketClient($"http://{ServerIp}:{ServerPort}/")
-            .AddClient<IRelayService>();
-
-        ServiceChannel = services.BuildServiceProvider();
-        Service = ServiceChannel.GetRequiredService<IRelayService>();
-
-        SettingsPage.DeviceStatusAppendix = string.Empty;
-        SettingsPage.StartConnectionTest();
+        catch (Exception ex)
+        {
+            InitException = ex;
+            Status = RelayDeviceStatus.ServiceError;
+            return;
+        }
 
         Host.Log($"Tried to initialize with status: {DeviceStatusString}");
         InitException = null;
